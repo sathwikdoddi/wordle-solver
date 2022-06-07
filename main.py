@@ -4,6 +4,8 @@ import time
 from selenium.webdriver.common.by import By
 
 browser = webdriver.Chrome('/Users/sathwikdoddi/Desktop/chromedriver')
+correct = []
+present = []
 
 guesses = []
 with open('possible_guesses.txt', "r") as g:
@@ -24,35 +26,44 @@ def evaluate_and_filter():
     root = browser.execute_script("return arguments[0].shadowRoot.querySelector('div')", current_row)
     tiles = root.find_elements(By.TAG_NAME, "game-tile")
     for tile in tiles:
+        tile_index = tiles.index(tile)
         evaluation = tile.get_attribute("evaluation")
         letter = tile.get_attribute("letter")
         if evaluation.strip() == "absent":
+            try:
+                correct.index(letter)
+                break
+            except:
+                try:
+                    present.index(letter)
+                    break
+                except:
+                    pass
             guesses[:] = [guess for guess in guesses if guess.find(letter) == -1]
-            print(len(guesses))
         elif evaluation.strip() == "present":
-            # for guess in guesses:
-            #     if guess.find(letter) == -1:
-            #         guesses.remove(guess)
-            #     elif guess.find(letter) == last_non_null.find(letter):
-            #         guesses.remove(guess)
-            guesses[:] = [guess for guess in guesses if guess.find(letter) > -1 and guess.find(letter) != last_non_null.find(letter)]
-            print(len(guesses))
+            guesses[:] = [guess for guess in guesses if guess[tile_index] != letter and guess.find(letter) != -1]
+            present.append(letter)
         else:
-            # for guess in guesses:
-            #     if guess.find(letter) != last_non_null.find(letter):
-            #         guesses.remove(guess)
-            guesses[:] = [guess for guess in guesses if guess.find(letter) == last_non_null.find(letter)]
+            guesses[:] = [guess for guess in guesses if guess[tile_index] == letter]
+            correct.append(letter)
+        print(letter + "\n")
+        print_guesses()
     return guesses[0]
 
 def enter_guess(word):
     keyboard.write(word, delay=0.05)
     keyboard.press_and_release('enter')
 
+def print_guesses():
+    for g in guesses:
+        print(g)
+    print("------------------------------------")
+
 def main():
     browser.get("https://www.nytimes.com/games/wordle/index.html")
     keyboard.wait("enter")
     time.sleep(2)
-    enter_guess("salet")
+    enter_guess("imshi")
     time.sleep(2)
     enter_guess(evaluate_and_filter())
     time.sleep(2)
@@ -61,6 +72,11 @@ def main():
     enter_guess(evaluate_and_filter())
     time.sleep(2)
     enter_guess(evaluate_and_filter())
+    time.sleep(2)
+    enter_guess(evaluate_and_filter())
+
+    keyboard.wait("enter")
+    browser.quit()
 
 if __name__ == '__main__':
     main()
